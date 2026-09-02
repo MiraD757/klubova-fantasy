@@ -250,7 +250,7 @@ footer{background:#030d10;color:#91a09b;padding:34px 0}.foot{display:grid;grid-t
    <h3>Mám zájem o Klubovou Fantasy</h3><p>Nechte kontakt a ozveme se vám.</p>
    <div class="fields"><input required placeholder="Název klubu"><input required placeholder="Jméno a příjmení"><input required type="email" placeholder="E-mail"><input placeholder="Telefon (nepovinné)"><textarea placeholder="Poznámka (nepovinné)"></textarea></div>
    <button class="btn primary" type="submit">MÁM ZÁJEM →</button>
-   <div class="fine">Formulář je zatím pouze vizuální náhled a data neodesílá.</div>
+   <div class="fine">Odesláním formuláře nám předáte kontakt pouze za účelem vyřízení vaší poptávky.</div>
   </form>
  </div>
 </section>
@@ -262,10 +262,52 @@ footer{background:#030d10;color:#91a09b;padding:34px 0}.foot{display:grid;grid-t
   <small>© 2026 Klubová Fantasy</small>
  </div>
 </footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+const SUPABASE_URL='https://abalmfflxjyqwypqzjpv.supabase.co';
+const SUPABASE_KEY='sb_publishable_pxoFTaDAGc3lGNBhIcxCCA_ztL5p1-B';
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('on')}),{threshold:.08});
 document.querySelectorAll('.reveal').forEach(e=>io.observe(e));
-document.getElementById('interestForm').addEventListener('submit',e=>{e.preventDefault();alert('Děkujeme za zájem. Odesílání formuláře bude napojeno v další fázi.');});
+document.getElementById('interestForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const form=e.currentTarget;
+ const button=form.querySelector('button[type="submit"]');
+ const inputs=form.querySelectorAll('input');
+ const textarea=form.querySelector('textarea');
+
+ const payload={
+  club_name:(inputs[0]?.value||'').trim(),
+  contact_name:(inputs[1]?.value||'').trim(),
+  email:(inputs[2]?.value||'').trim(),
+  phone:(inputs[3]?.value||'').trim()||null,
+  message:(textarea?.value||'').trim()||null
+ };
+
+ if(!payload.club_name||!payload.contact_name||!payload.email){
+  alert('Vyplň prosím název klubu, jméno a e-mail.');
+  return;
+ }
+
+ const originalText=button.textContent;
+ button.disabled=true;
+ button.textContent='ODESÍLÁM…';
+
+ try{
+  const {error}=await supabaseClient.from('club_inquiries').insert(payload);
+  if(error)throw error;
+
+  form.reset();
+  alert('Děkujeme za zájem! Poptávka byla úspěšně odeslána. Ozveme se vám.');
+ }catch(error){
+  console.error('Chyba při odesílání poptávky:',error);
+  alert('Poptávku se nepodařilo odeslat. Zkus to prosím znovu.');
+ }finally{
+  button.disabled=false;
+  button.textContent=originalText;
+ }
+});
 </script>
 </body>
 </html>
